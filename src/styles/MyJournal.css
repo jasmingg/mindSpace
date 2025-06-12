@@ -1,0 +1,196 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Inter:ital,opsz@0,14..32;1,14..32&family=Noto+Serif+Ottoman+Siyaq&display=swap');
+
+.journal-page {
+  font-family: sans-serif;
+  animation: fadeIn 0.5s ease;
+  
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.journal-entry-section {
+  padding-top: 2rem;
+  background: linear-gradient(to right, rgba(216, 180, 254, 0.8), rgba(240, 171, 252, 0.8));
+  backdrop-filter: blur(4px); /* gives frosted glass effect */
+  padding-bottom: 4rem;
+}
+
+.journal-entry-section::after { /* creates a fade-out effect of purple background at the bottom of the page*/
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, #d8b4fe);
+  pointer-events: none;
+}
+
+.journal-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.journal-header h1 {
+  font-family: "Noto Serif Ottoman Siyaq";
+  font-size: 2.8rem;
+  color: #6d28d9; /* vibrant purple for date header*/
+  margin-top: 1rem;
+
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  
+}
+
+.journal-header h1:hover {
+  transform: scale(1.02);
+  cursor:default;
+}
+
+.journal-header p {
+  font-size: 1rem;
+  color: #a1a1aa; /* muted neutral gray for subheading*/
+  font-style: italic;
+  letter-spacing: 0.3px;
+  margin-top: 0.5rem;
+}
+
+.stats {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.stat-box {
+  background-color: #f3f4f6;
+  font: Inter;
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  cursor: default;
+}
+
+.stat-box:hover {
+  background-color: #a8a8ad;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+.stat-box h2 {
+  margin: 0;
+  font-size: 2.5rem;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+
+}
+
+input[type="color"] {
+  width: 100%;
+  height: 40px;
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+  border: 1px solid #ccc;
+}
+
+.color-icon {
+  font-size: 2.5rem;
+}
+
+.entry-form {
+  max-width: 700px;
+  margin: 2rem auto;
+  background-color: rgba(255, 248, 240, 0.85); /* softer background */
+  padding: 3rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  font-family: 'Georgia', serif;
+  line-height: 1.6;
+  border: 1px solid #f2e4d7;
+}
+
+.entry-form h2 {
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.entry-form label {
+  display: block;
+  margin: 1rem 0 0.25rem;
+  font-weight: 500;
+}
+
+.entry-form select,
+.entry-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.entry-form textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
+  height: 150px;
+  max-height: 150px;
+  min-height: 150px;
+
+  font-family: "Caveat", cursive;
+  font-size: 20px;
+  line-height: 25px;
+
+  border: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    #fff8f0,
+    #fff8f0 24px,
+    #e7d8c9 25px
+  );
+  padding: 5px 12px; /* adjust so text lands on the first line */
+  border-radius: 8px;
+  resize: vertical;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.05);
+}
+
+.entry-form textarea::placeholder {
+  font-style: italic;
+  color: #bfae9c;
+}
+
+.typing-line {
+  opacity: 0;
+  animation: inkAppear 0.4s forwards;
+}
+
+@keyframes inkAppear {
+  to {
+    opacity: 1;
+  }
+}
+
+.entry-form button {
+  margin-top: 1.5rem;
+  background-color: #a9746e;
+  color: #fffefb;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-family: 'Inter';
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.entry-form button:hover {
+  background-color: #8b5e57;
+}
