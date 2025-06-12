@@ -1,5 +1,6 @@
 import React from "react";
 import "../styles/HomePage.css";
+import AccountMenu from "./AccountMenu"
 import { Link, useLocation } from 'react-router-dom';
 
 const MenuBar = () => {
@@ -17,8 +18,7 @@ const MenuBar = () => {
           <li><button>Quotes Feed</button></li>
           <li><button>Insights</button></li>
           <li><button>My Entries</button></li>
-          <li><button type='button' className="sign-in">Sign in</button></li>
-          <li><button type='button' className="register">Register</button></li>
+          <li><AccountMenu /> </li>
         </ul>
       </nav>
     </div>

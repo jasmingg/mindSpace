@@ -13,7 +13,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="hero">
         <h1>MindSpace</h1>
-        <p>penny for your thoughts, Jasmin?</p>
+        <p>Penny for your thoughts?</p>
         <Link to="/journal"><button className="create-entry">Create Today’s Entry</button></Link>
       </section>
 
