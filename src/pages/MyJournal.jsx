@@ -29,18 +29,8 @@ const MyJournal = () => {
   }
 
 
-  const [colorOfDay, setColorOfDay] = useState("#e0bbff");
-  // reduces lag
-  let animationFrame = useRef(null);
-  // reduces lag from react handling color change animation from picker
-  const handleColorChange = (e) => {
-    const newColor = e.target.value;
-
-    if (animationFrame){ cancelAnimationFrame(animationFrame)};
-    animationFrame.current = requestAnimationFrame(() => {
-      setColorOfDay(newColor);
-    });
-  };
+  // Creating a state variable for this number, however for now we will keep it statically equal to 0
+  const [streakCounter, setStreak] = useState(0);
 
   return (
     <div className="journal-page">
@@ -57,29 +47,20 @@ const MyJournal = () => {
     <p>Total Entries</p>
   </div>
 
-  <div className="stat-box color-card">
+  <div className="stat-box streak-card">
     <div
-      className="color-icon"
-      title="Pick your color of the day"
+      className="streak-icon"
+      title="Displays users streaks based on continuous daily entries"
     >
-      🎨
+      🔥
     </div>
-    <p>Color of the Day</p>
-
-    {
-      <input
-        type="color"
-        defaultValue={colorOfDay}
-        onInput={handleColorChange}
-        className="color-input"
-      />
-    }
+    <p>{streakCounter} day streak!</p>
   </div>
 </section>
 
         <section className="entry-form">
           <h2>Today I feel...</h2>
-          <form>
+          <form onSubmit={(e) => {e.preventDefault(); }}>
             <label htmlFor="mood">Mood</label>
             <select id="mood" name="mood">
               <option>😊 Happy</option>
