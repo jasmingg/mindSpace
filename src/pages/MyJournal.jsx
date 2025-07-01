@@ -14,7 +14,7 @@ const MyJournal = () => {
     const month = date.toLocaleDateString("en-US", { month: "long" });
     const day = date.getDate();
   
-    // Adding a suffix depending on the day (1st, 2nd, 3rd, 4th...)
+    // adding a suffix depending on the day (1st, 2nd, 3rd, 4th...)
     const suffix = (n) => {
       if (n > 3 && n < 21) return `${n}th`;
       switch (n % 10) {
@@ -27,10 +27,29 @@ const MyJournal = () => {
   
     return `${weekday}, ${month} ${suffix(day)}.`;
   }
+  
+  const saveEntryRoute = import.meta.env.VITE_JOURNAL_SAVE_ENTRY_API_ROUTE;
+
+  // async function sends user entry data to dynamoDB via API gateway + lambda
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const response = await fetch(saveEntryRoute, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: "testUser123",                    // replace with actual user ID later
+        entryDate: new Date().toISOString().split("T")[0],
+        mood: document.getElementById("mood").value,
+        entry: entry,
+      }),
+    });
+    const data = await response.json();
+    console.log(data.message);
+  }
 
 
   // Creating a state variable for this number, however for now we will keep it statically equal to 0
-  const [streakCounter, setStreak] = useState(0);
+  const [streakCount, setStreak] = useState(0);
 
   return (
     <div className="journal-page">
@@ -54,13 +73,13 @@ const MyJournal = () => {
     >
       🔥
     </div>
-    <p>{streakCounter} day streak!</p>
+    <p>{streakCount} day streak!</p>
   </div>
 </section>
 
         <section className="entry-form">
           <h2>Today I feel...</h2>
-          <form onSubmit={(e) => {e.preventDefault(); }}>
+          <form onSubmit={handleSubmit}>
             <label htmlFor="mood">Mood</label>
             <select id="mood" name="mood">
               <option>😊 Happy</option>
