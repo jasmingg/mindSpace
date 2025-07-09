@@ -29,9 +29,9 @@
 
 .dropdown-menu {
   position: absolute;
-  top: calc(100%); /* Place right below the profile button */
+  top: calc(100%); /* placing right below the profile button */
   left: 0;
-  margin-top: -2px; /* 👈 Pull it up to eliminate the gap */
+  margin-top: -2px; /* pull it up to eliminate the gap */
   background: white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 5px;

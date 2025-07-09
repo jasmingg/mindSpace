@@ -1,36 +1,31 @@
 import React, { useState, useRef } from "react";
 import "../styles/MyJournal.css";
 
+// holds content for navigation: Home, Entries, etc
 import MenuBar from "../components/MenuBar"
 
-const MyJournal = () => {
-  const [entry, setEntry] = useState('');
-  const maxChars = 10000;
+// content for changing the current entry date (arrows, current date header,...)
+import DateSelector from "../components/DateSelector"
 
-  // returns the date for the heading. (eg. Wednesday June 11th.)
-  function getFormattedDate() {
-    const date = new Date();
-    const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
-    const month = date.toLocaleDateString("en-US", { month: "long" });
-    const day = date.getDate();
-  
-    // adding a suffix depending on the day (1st, 2nd, 3rd, 4th...)
-    const suffix = (n) => {
-      if (n > 3 && n < 21) return `${n}th`;
-      switch (n % 10) {
-        case 1: return `${n}st`;
-        case 2: return `${n}nd`;
-        case 3: return `${n}rd`;
-        default: return `${n}th`;
-      }
-    };
-  
-    return `${weekday}, ${month} ${suffix(day)}.`;
-  }
-  
+// content for displaying entries (based on entry date)
+import EntryDisplay from "../components/EntryDisplay"
+
+const MyJournal = () => {
+
+    // holds the value for the date title to display on page
+  const [viewingDate, changeDate] = useState(new Date()); // today's date = new Date()
+    // holds the entry content to display on page
+  const [entryData, setEntryData] = useState(null);
+
+  // compares 2 different dates and returns a boolean (used in child components)
+  function isSameDate(date1, date2) {
+  return date1.toDateString() === date2.toDateString();
+}
+
+  // clicking save entry sends user to this API gateway link
   const saveEntryRoute = import.meta.env.VITE_JOURNAL_SAVE_ENTRY_API_ROUTE;
 
-  // async function sends user entry data to dynamoDB via API gateway + lambda
+  // async function: sends user entry data to dynamoDB via API gateway + lambda
   const handleSubmit = async (e) => {
     e.preventDefault();
     const response = await fetch(saveEntryRoute, {
@@ -47,6 +42,19 @@ const MyJournal = () => {
     console.log(data.message);
   }
 
+  // async function: get current viewing day's entry data from dynamoDB using API gateway
+  const fetchEntry = async (date) => {
+  try {
+    const response = await fetch(`https://your-api-url.com/entries?date=${date.toISOString().split("T")[0]}&userId=testUser123`);
+    const data = await response.json();
+    setEntryData(data);
+  } catch (err) {
+    console.error("Failed to fetch entry:", err);
+    setEntryData(null); // fallback to blank if nothing returned
+  }
+};
+
+
 
   // Creating a state variable for this number, however for now we will keep it statically equal to 0
   const [streakCount, setStreak] = useState(0);
@@ -55,10 +63,15 @@ const MyJournal = () => {
     <div className="journal-page">
       <MenuBar />
       <div className="journal-entry-section">
-        <header className="journal-header">
-          <h1> {getFormattedDate()}</h1>
-          <p>Reflect on your day, track your thoughts.</p>
-        </header>
+      <header className="journal-header">
+        <form onSubmit={handleSubmit}>
+          <DateSelector
+            viewingDate={viewingDate} 
+            changeDate={changeDate} 
+            fetchEntry={fetchEntry} />
+        </form>
+        <p>Reflect on your day, track your thoughts.</p>
+    </header>
 
         <section className="stats">
   <div className="stat-box">
@@ -76,34 +89,10 @@ const MyJournal = () => {
     <p>{streakCount} day streak!</p>
   </div>
 </section>
-
-        <section className="entry-form">
-          <h2>Today I feel...</h2>
-          <form onSubmit={handleSubmit}>
-            <label htmlFor="mood">Mood</label>
-            <select id="mood" name="mood">
-              <option>😊 Happy</option>
-              <option>😐 Okay</option>
-              <option>😞 Sad</option>
-              <option>😤 Frustrated</option>
-              <option>😌 Calm</option>
-            </select>
-
-            <label htmlFor="entry">Your thoughts</label>
-            <textarea 
-              id="entry"
-              value={entry}
-              rows="6" 
-              placeholder="Write freely..."
-              onChange={(e) => setEntry(e.target.value)}
-              maxLength = {maxChars}/>
-          <p className="caveatFont" style={{ textAlign: 'right', color: '#888' }}>
-            {entry.length}/{maxChars}
-          </p>
-
-            <button type="submit">Save Entry</button>
-          </form>
-        </section>
+    <EntryDisplay 
+      entryData={entryData}
+      isSameDate={isSameDate}
+      viewingDate={viewingDate} />
       </div>
     </div>
   );

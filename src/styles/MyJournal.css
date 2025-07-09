@@ -45,13 +45,8 @@
   font-size: 3rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
-  
 }
 
-.journal-header h1:hover {
-  transform: scale(1.02);
-  cursor:default;
-}
 
 .journal-header p {
   font-size: 1rem;
