@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/MyJournal.css";
 
 // holds content for navigation: Home, Entries, etc
@@ -25,6 +25,13 @@ const MyJournal = () => {
   // clicking save entry sends user to this API gateway link
   const saveEntryRoute = import.meta.env.VITE_JOURNAL_SAVE_ENTRY_API_ROUTE;
 
+  // if viewingDate changes: call fetchEntry to create a GET request to get entry data for current day
+  useEffect(() => {
+  if (viewingDate) {
+    fetchEntry(viewingDate);
+  }
+}, [viewingDate]);
+
   // async function: sends user entry data to dynamoDB via API gateway + lambda
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +52,8 @@ const MyJournal = () => {
   // async function: get current viewing day's entry data from dynamoDB using API gateway
   const fetchEntry = async (date) => {
   try {
-    const response = await fetch(`https://your-api-url.com/entries?date=${date.toISOString().split("T")[0]}&userId=testUser123`);
+    // TO DO: fix the link, currently the query parameter after /entries requests specifically for user123's entry for a specific day
+    const response = await fetch(`https://1cmhezd4r6.execute-api.us-east-1.amazonaws.com/dev/entries?entryDate=${date.toISOString().split("T")[0]}&userId=jasmingg`);
     const data = await response.json();
     setEntryData(data);
   } catch (err) {

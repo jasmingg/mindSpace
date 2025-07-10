@@ -19,31 +19,38 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
 
   // function provides mood options available based on previous submissions if any
   function moodDisplay () {
-    if (entryData.mood === "happy" ) {
+    console.log("mood display is being ran")
+    if (entryData?.mood === "happy" ) {
       return (
         <option id="happy">😊 Happy</option>
       )
     }
-    else if (entryData.mood === "okay") {
+    else if (entryData?.mood === "okay") {
       return (
         <option id="okay">😐 Okay</option>
       )
     }
-    else if (entryData.mood === "sad") {
+    else if (entryData?.mood === "sad") {
       return (
         <option id="sad">😞 Sad</option>
       )
     }
 
-    else if (entryData.mood === "frustrated") {
+    else if (entryData?.mood === "frustrated") {
       return (
         <option id="frustrated">😤 Frustrated</option>
       )
     }
 
-    else if (entryData.mood === "calm") {
+    else if (entryData?.mood === "calm") {
       return (
         <option id="calm">😌 Calm</option>
+      )
+    }
+
+    else if (entryData === null) {
+      return (
+        <div> Loading...</div>
       )
     }
 

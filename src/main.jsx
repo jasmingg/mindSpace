@@ -16,6 +16,7 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 // wrap the application with AuthProvider
 root.render(
+  // strictMode is a safety check: when page loads, API requests are sent twice to check for unsafe side effects
   <React.StrictMode>
     <AuthProvider {...cognitoAuthConfig}>
       <App />

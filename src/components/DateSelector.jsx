@@ -2,9 +2,7 @@ import { useState } from "react";
 import "../styles/DateSelector.css";
 
 
-export default function DateSelector() {
-  // holds the date to be displayed when first on this page
-  const todaysDate = new Date();
+export default function DateSelector({viewingDate, changeDate, fetchEntry}) {
 
   // returns the date for the heading. (eg. Wednesday June 11th.)
   function getFormattedDate(date) {
@@ -26,14 +24,28 @@ export default function DateSelector() {
     return `${weekday}, ${month} ${suffix(day)}.`;
   }
 
+  const moveBackOne = () => {
+    const newDate = new Date(viewingDate);
+    newDate.setDate(newDate.getDate() - 1);
+    changeDate(newDate); // changing newDate
+  }
+
+    const moveForwardOne = () => {
+    const newDate = new Date(viewingDate);
+    newDate.setDate(newDate.getDate() + 1);
+    changeDate(newDate);
+  }
+
 
   return (
     <div className="arrow-date-container">
-      <img id="leftArrow" src="../src/assets/arrow-fat-line-left-fill.svg" className="arrow-button" />
+      <img id="leftArrow" src="../src/assets/arrow-fat-line-left-fill.svg" className="arrow-button" 
+        onClick={moveBackOne}/>
       
       <h1>{getFormattedDate(viewingDate)}</h1>
       
-      <img id ="rightArrow" src="../src/assets/arrow-fat-line-right-fill.svg" className="arrow-button" />
+      <img id ="rightArrow" src="../src/assets/arrow-fat-line-right-fill.svg" className="arrow-button" 
+        onClick={moveForwardOne}/>
     </div>
   )
 }
