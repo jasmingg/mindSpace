@@ -9,74 +9,95 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
   // holds the changing entry value depending on the day
   const [entry, setEntry] = useState(entryData?.entry || "");
 
-  // ensures the entry is connected to the changing date
+  // holds the value for a saved mood for a date, if it exists, or just ""
+  const [selectedMood, setSelectedMood] = useState(entryData?.mood || "");
+
+
+  // ensures the entryData (prop) is connected to the changing date
   useEffect(() => {
             // the ? makes sure entry exists, otherwise returns false instead of an error
     setEntry(entryData?.entry || "");
-  }, [entryData]);
+     console.log("entryData.mood is:", entryData?.mood);
+     if (entryData?.mood && entryData.mood !==  selectedMood) {
+      setSelectedMood(entryData.mood);
+     }
+  }, [entryData, setSelectedMood]);
 
 
 
   // function provides mood options available based on previous submissions if any
-  function moodDisplay () {
-    console.log("mood display is being ran")
-    if (entryData?.mood === "happy" ) {
+  function renderMoodDropdown () {
+    // CASE 1 & 2: if viewingDate is today (Either mood has been previously saved or not...)
+        if (isToday) {
+          return (
+            <select
+              id="mood"
+              name="mood"
+              value={selectedMood}
+              onChange={(e) => setSelectedMood(e.target.value)}
+            >
+              <option value="">-- Select your mood --</option>
+              <option value="happy" id="happy">😊 Happy</option>
+              <option valu="okay"id="okay">😐 Okay</option>
+              <option value="sad" id="sad">😞 Sad</option>
+              <option value="frustrated" id="frustrated">😤 Frustrated</option>
+              <option value="calm" id="calm">😌 Calm</option>
+            </select>)
+        }
+    
+    // CASE 3: if viewingDate is not today but the entry's mood has been saved
+    if (!isToday && entryData.mood) {
+      if (entryData.mood === "happy") {
       return (
-        <option id="happy">😊 Happy</option>
-      )
-    }
-    else if (entryData?.mood === "okay") {
+        <select id="mood" name="mood" value="happy" disabled>
+          <option value="happy" id="happy">😊 Happy</option>
+          <option value=""></option>
+        </select>
+      );
+    } else if (entryData.mood === "okay") {
       return (
-        <option id="okay">😐 Okay</option>
-      )
-    }
-    else if (entryData?.mood === "sad") {
+        <select id="mood" name="mood" value="okay" disabled>
+          <option value="okay" id="okay">😐 Okay</option>
+          <option value=""></option>
+        </select>
+      );
+    } else if (entryData.mood === "sad") {
       return (
-        <option id="sad">😞 Sad</option>
-      )
-    }
-
-    else if (entryData?.mood === "frustrated") {
+        <select id="mood" name="mood" value="sad" disabled>
+          <option value="sad" id="sad">😞 Sad</option>
+          <option value=""></option>
+        </select>
+      );
+    } else if (entryData.mood === "frustrated") {
       return (
-        <option id="frustrated">😤 Frustrated</option>
-      )
-    }
-
-    else if (entryData?.mood === "calm") {
+        <select id="mood" name="mood" value="frustrated" disabled>
+          <option value="frustrated" id="frustrated">😤 Frustrated</option>
+          <option value=""></option>
+        </select>
+      );
+    } else if (entryData.mood === "calm") {
       return (
-        <option id="calm">😌 Calm</option>
-      )
+        <select id="mood" name="mood" value="calm" disabled>
+          <option value="calm" id="calm">😌 Calm</option>
+          <option value=""></option>
+        </select>
+      );
     }
-
-    else if (entryData === null) {
-      return (
-        <div> Loading...</div>
-      )
-    }
-
-  else {
-    return (
-      <option id="none"> no data available</option>
-    )
   }
-  }
+    
 
+    // CASE 4: not today AND no saved mood
+  return <div style={{ color: '#888' }}>No mood data available.</div>;
+  
+
+  }
   return (
 // css might be messed up bc this section was before the form, but now its after form
 <section className="entry-form">
           <h2>Today I feel...</h2>
             <label htmlFor="mood">Mood</label>
-            {/* if user is viewing current day's entry, give options. otherwise show last submission*/}
-            {isToday ? (
-              <select id="mood" name="mood">
-                <option id="happy">😊 Happy</option>
-                <option id="okay">😐 Okay</option>
-                <option id="sad">😞 Sad</option>
-                <option id="frustrated">😤 Frustrated</option>
-                <option id="calm">😌 Calm</option>
-              </select>) :
-              (moodDisplay())
-            }
+            
+            { renderMoodDropdown() }
             
             <label htmlFor="entry">Your thoughts</label>
             <textarea 
@@ -85,7 +106,7 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
               value={ entry }
               readOnly={!isToday}
               rows="6" 
-              placeholder="Write freely..."
+              placeholder={entryData?.entry ? "Write freely..." : "Nothing to see here"}
               onChange={(e) => setEntry(e.target.value)}
               maxLength = {maxChars}/>
           <p className="caveatFont" style={{ textAlign: 'right', color: '#888' }}>
