@@ -30,6 +30,7 @@ const MyJournal = () => {
   const throttledFetchEntry = useCallback(
   throttle(async (date) => {
     try {
+      setEntryData("");
       // TO DO: fix the link, currently the query parameter after /entries requests specifically for user123's entry for a specific day
       const response = await fetch(`https://1cmhezd4r6.execute-api.us-east-1.amazonaws.com/dev/entries?entryDate=${date.toISOString().split("T")[0]}&userId=jasmingg`);
       const data = await response.json();

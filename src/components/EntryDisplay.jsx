@@ -7,10 +7,12 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
   const isToday = isSameDate(new Date(), viewingDate)
 
   // holds the changing entry value depending on the day
-  const [entry, setEntry] = useState(entryData?.entry || "");
+  const [entry, setEntry] = useState(entryData?.entry || "starting");
 
   // holds the value for a saved mood for a date, if it exists, or just ""
   const [selectedMood, setSelectedMood] = useState(entryData?.mood || "");
+
+   const [loading, setLoading] = useState(true); // holds value for if screen is loading
 
 
   // ensures the entryData (prop) is connected to the changing date
@@ -21,7 +23,8 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
      if (entryData?.mood && entryData.mood !==  selectedMood) {
       setSelectedMood(entryData.mood);
      }
-  }, [entryData, setSelectedMood]);
+     setTimeout(() => setLoading(false), 200); // smooth fade to 200 milliseconds
+  }, [entryData]);
 
 
 
@@ -91,32 +94,64 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
   
 
   }
-  return (
-// css might be messed up bc this section was before the form, but now its after form
-<section className="entry-form">
-          <h2>Today I feel...</h2>
-            <label htmlFor="mood">Mood</label>
-            
-            { renderMoodDropdown() }
-            
-            <label htmlFor="entry">Your thoughts</label>
-            <textarea 
-              id="entry"
-              /* shows current entry, editable if isToday is true else readOnly */
-              value={ entry }
-              readOnly={!isToday}
-              rows="6" 
-              placeholder={entryData?.entry ? "Write freely..." : "Nothing to see here"}
-              onChange={(e) => setEntry(e.target.value)}
-              maxLength = {maxChars}/>
-          <p className="caveatFont" style={{ textAlign: 'right', color: '#888' }}>
-            {entry.length}/{maxChars}
-          </p>
-          { isToday ?
-            <button type="submit">Save Entry</button>
-            : null}
-        </section>
-  )
-}
+return (
+    <section
+      style={{
+        position: 'relative',
+        minHeight: '300px',
+      }}
+    >
+      {/* loading overlay */}
+      {loading && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: '#fff8f0',
+            borderRadius: '16px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10,
+            fontFamily: 'Caveat, cursive',
+            color: '#888',
+            fontSize: '1.5rem',
+            transition: 'opacity 0.3s ease',
+          }}
+        >
+          Loading entry...
+        </div>
+      )}
+
+      {/* actual form content, placed behind loading overlay for smooth transition */}
+      <section
+        className="entry-form"
+        style={{
+          opacity: loading ? 0 : 1,
+          pointerEvents: loading ? 'none' : 'auto',
+          transition: 'opacity 0.3s ease',
+        }}
+      >
+        <h2>Today I feel...</h2>
+        <label htmlFor="mood">Mood</label>
+        {renderMoodDropdown()}
+        <label htmlFor="entry">Your thoughts</label>
+        <textarea
+          id="entry"
+          value={entry}
+          readOnly={!isToday}
+          rows="6"
+          placeholder={entryData?.entry ? "Write freely..." : "Nothing to see here"}
+          onChange={(e) => setEntry(e.target.value)}
+          maxLength={maxChars}
+        />
+        <p className="caveatFont" style={{ textAlign: 'right', color: '#888' }}>
+          {entry.length}/{maxChars}
+        </p>
+        {isToday && <button type="submit">Save Entry</button>}
+      </section>
+    </section>
+  );
+};
 
 export default EntryDisplay;
