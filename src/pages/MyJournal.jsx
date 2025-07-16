@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import throttle from "lodash.throttle";
 import "../styles/MyJournal.css";
 
@@ -17,6 +17,8 @@ const MyJournal = () => {
   const [viewingDate, changeDate] = useState(new Date()); // today's date = new Date()
     // holds the entry content to display on page
   const [entryData, setEntryData] = useState(null);
+
+  const entryDisplayRef = useRef();
 
   // compares 2 different dates and returns a boolean (used in child components)
   function isSameDate(date1, date2) {
@@ -53,18 +55,27 @@ const MyJournal = () => {
   // async function: sends user entry data to dynamoDB via API gateway + lambda
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const response = await fetch(saveEntryRoute, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: "testUser123",                    // replace with actual user ID later
-        entryDate: new Date().toISOString().split("T")[0],
-        mood: document.getElementById("mood").value,
-        entry: entry,
-      }),
-    });
-    const data = await response.json();
-    console.log(data.message);
+    console.log("Submit button clicked");
+    // Get the latest entry data from EntryDisplay.
+    const { entry, mood } = entryDisplayRef.current.getEntryData();
+    console.log("Submitting entry:", { mood, entry });
+    try {
+      const response = await fetch(saveEntryRoute, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "jasmingg",                    // replace with actual user ID later
+          entryDate: new Date().toISOString().split("T")[0],
+          mood: mood,
+          entry: entry,
+        }),
+      });
+      const data = await response.json();
+      console.log("Entry Saved:" , data.message);
+    }
+    catch (err) {
+      console.error("Failed to submit entry");
+    }
   }
 
   // using a state variable for this number, however for now we will keep it statically equal to 0
@@ -74,35 +85,35 @@ const MyJournal = () => {
     <div className="journal-page">
       <MenuBar />
       <div className="journal-entry-section">
-      <header className="journal-header">
-        <form onSubmit={handleSubmit}>
-          <DateSelector
-            viewingDate={viewingDate} 
-            changeDate={changeDate}/>
-        </form>
-        <p>Reflect on your day, track your thoughts.</p>
-    </header>
+        <header className="journal-header">
+          <form onSubmit={handleSubmit}>
+            <DateSelector
+              viewingDate={viewingDate} 
+              changeDate={changeDate}/>
+            <p>Reflect on your day, track your thoughts.</p>
 
-        <section className="stats">
-  <div className="stat-box">
-    <h2>0</h2>
-    <p>Total Entries</p>
-  </div>
+            <section className="stats">
+              <div className="stat-box">
+                <h2>0</h2>
+                <p>Total Entries</p>
+              </div>
 
-  <div className="stat-box streak-card">
-    <div
-      className="streak-icon"
-      title="Displays users streaks based on continuous daily entries"
-    >
-      🔥
-    </div>
-    <p>{streakCount} day streak!</p>
-  </div>
-</section>
-    <EntryDisplay 
-      entryData={entryData}
-      isSameDate={isSameDate}
-      viewingDate={viewingDate} />
+              <div className="stat-box streak-card">
+                <div
+                  className="streak-icon"
+                  title="Displays users streaks based on continuous daily entries">
+                    🔥
+                </div>
+                <p>{streakCount} day streak!</p>
+              </div>
+            </section>
+            <EntryDisplay 
+              ref={entryDisplayRef}
+              entryData={entryData}
+              isSameDate={isSameDate}
+              viewingDate={viewingDate} />
+          </form>
+        </header>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
-import { useState, useEffect} from 'react';
+import "../styles/EntryDisplay.css";
 
-const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+
+const EntryDisplay = forwardRef(({ entryData, isSameDate, viewingDate }, ref) => {
       //the max character length for an entry
   const maxChars = 10000;
 
@@ -19,7 +21,6 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
   useEffect(() => {
             // the ? makes sure entry exists, otherwise returns false instead of an error
     setEntry(entryData?.entry || "");
-     console.log("entryData.mood is:", entryData?.mood);
      if (entryData?.mood && entryData.mood !==  selectedMood) {
       setSelectedMood(entryData.mood);
      }
@@ -27,6 +28,13 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
   }, [entryData]);
 
 
+  // exposing this method to retrieve current entry data (in myJournal) for handleSubmit POST Request
+  useImperativeHandle(ref, () => ({
+    getEntryData: () => ({
+      entry: entry,
+      mood: selectedMood,
+    }),
+  }), [entry, selectedMood]);
 
   // function provides mood options available based on previous submissions if any
   function renderMoodDropdown () {
@@ -90,7 +98,7 @@ const EntryDisplay = ( {entryData, isSameDate, viewingDate} ) => {
     
 
     // CASE 4: not today AND no saved mood
-  return <div style={{ color: '#888' }}>No mood data available.</div>;
+  return <div id="mood" value="" style={{ color: '#888' }}>No mood data available.</div>;
   
 
   }
@@ -103,22 +111,7 @@ return (
     >
       {/* loading overlay */}
       {loading && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: '#fff8f0',
-            borderRadius: '16px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 10,
-            fontFamily: 'Caveat, cursive',
-            color: '#888',
-            fontSize: '1.5rem',
-            transition: 'opacity 0.3s ease',
-          }}
-        >
+        <div className="loading-div">
           Loading entry...
         </div>
       )}
@@ -151,7 +144,6 @@ return (
         {isToday && <button type="submit">Save Entry</button>}
       </section>
     </section>
-  );
-};
-
+  )
+});
 export default EntryDisplay;
