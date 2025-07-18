@@ -11,6 +11,8 @@ import DateSelector from "../components/DateSelector"
 // content for displaying entries (based on entry date)
 import EntryDisplay from "../components/EntryDisplay"
 
+// content for messages when attempting to save entry (success, error - not logged in, warning - duplicate)
+import ToastBanner from "../components/ToastBanner"
 const MyJournal = () => {
 
     // holds the value for the date title to display on page
@@ -18,12 +20,16 @@ const MyJournal = () => {
     // holds the entry content to display on page
   const [entryData, setEntryData] = useState(null);
 
+    // a ref prop when calling EntryData: gives access to exposed method entryData
   const entryDisplayRef = useRef();
+
+   // a ref prop when calling ToastBanner: gives access to exposed method showToast
+  const ToastBannerRef = useRef();
 
   // compares 2 different dates and returns a boolean (used in child components)
   function isSameDate(date1, date2) {
-  return date1.toDateString() === date2.toDateString();
-}
+    return date1.toDateString() === date2.toDateString();
+  }
 
   // clicking save entry sends user to this API gateway link
   const saveEntryRoute = import.meta.env.VITE_JOURNAL_SAVE_ENTRY_API_ROUTE;
@@ -52,30 +58,46 @@ const MyJournal = () => {
   }
 }, [viewingDate, throttledFetchEntry]);
 
+
+
+
   // async function: sends user entry data to dynamoDB via API gateway + lambda
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submit button clicked");
     // Get the latest entry data from EntryDisplay.
     const { entry, mood } = entryDisplayRef.current.getEntryData();
-    console.log("Submitting entry:", { mood, entry });
-    try {
-      const response = await fetch(saveEntryRoute, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: "jasmingg",                    // replace with actual user ID later
-          entryDate: new Date().toISOString().split("T")[0],
-          mood: mood,
-          entry: entry,
-        }),
-      });
-      const data = await response.json();
-      console.log("Entry Saved:" , data.message);
+    const isDuplicate = ToastBannerRef.current.checkAndToastDuplicate({
+    currentEntry: { mood: mood, entry: entry },
+    savedEntry: { mood: entryData?.mood, entry: entryData?.entry } })
+
+    if ( isDuplicate ) {
+      console.log("isDuplicate is true")
+      ToastBannerRef.current.showToast("No changes to save.", "warning" );
+      return;
     }
-    catch (err) {
-      console.error("Failed to submit entry");
-    }
+    else {
+      console.log("running submit")
+      try {
+        console.log("Submitting entry:", { mood, entry });
+        const response = await fetch(saveEntryRoute, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: "jasmingg",                    // replace with actual user ID later
+            entryDate: new Date().toISOString().split("T")[0],
+            mood: mood,
+            entry: entry,
+          }),
+        });
+        const data = await response.json();
+        console.log("Entry Saved:" , data.message);
+        // using exposed method via ref to save entry
+        ToastBannerRef.current.showToast("Entry Saved!", "success");
+      }
+      catch (err) {
+        console.error("Failed to submit entry");
+      }
+  }
   }
 
   // using a state variable for this number, however for now we will keep it statically equal to 0
@@ -86,11 +108,12 @@ const MyJournal = () => {
       <MenuBar />
       <div className="journal-entry-section">
         <header className="journal-header">
-          <form onSubmit={handleSubmit}>
             <DateSelector
               viewingDate={viewingDate} 
               changeDate={changeDate}/>
             <p>Reflect on your day, track your thoughts.</p>
+        </header>
+          <form onSubmit={handleSubmit}>
 
             <section className="stats">
               <div className="stat-box">
@@ -113,8 +136,9 @@ const MyJournal = () => {
               isSameDate={isSameDate}
               viewingDate={viewingDate} />
           </form>
-        </header>
       </div>
+      <ToastBanner
+        ref={ToastBannerRef} />
     </div>
   );
 }
