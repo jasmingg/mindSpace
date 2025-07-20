@@ -43,3 +43,11 @@
     brightness(1.4)
     drop-shadow(0 0 2px rgba(109, 40, 217, 0.8));
 }
+
+.arrow-no-access {
+  cursor:not-allowed;
+  flex-shrink: 0;
+  transition: all 0.2s ease-in-out;
+  filter: drop-shadow(0 0 4px rgba(36, 30, 39, 0.329)); /* dark grey*/
+  color: grey;
+}

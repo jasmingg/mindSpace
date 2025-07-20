@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useAuth } from "react-oidc-context";
 import throttle from "lodash.throttle";
 import "../styles/MyJournal.css";
 
-// holds content for navigation: Home, Entries, etc
+// self-made hook for gaining access to tokens
+import useTokens from "../components/hooks/useTokens"
+
+// holds content for navigation:Home, Entries, etc
 import MenuBar from "../components/MenuBar"
 
 // content for changing the current entry date (arrows, current date header,...)
@@ -20,11 +24,18 @@ const MyJournal = () => {
     // holds the entry content to display on page
   const [entryData, setEntryData] = useState(null);
 
-    // a ref prop when calling EntryData: gives access to exposed method entryData
+    // used in <EntryData />: gives access to exposed function entryData
   const entryDisplayRef = useRef();
 
-   // a ref prop when calling ToastBanner: gives access to exposed method showToast
+   // used in <ToastBanner />: gives access to exposed function showToast
   const ToastBannerRef = useRef();
+
+  // getting tokens from hook. Can hold null or the tokens
+  const {accessToken, idToken} = useTokens();
+
+  const auth = useAuth();
+  // can be null or hold the username, auth is stateful
+  const username = auth.user?.profile?.["cognito:username"];
 
   // compares 2 different dates and returns a boolean (used in child components)
   function isSameDate(date1, date2) {
@@ -38,9 +49,12 @@ const MyJournal = () => {
   const throttledFetchEntry = useCallback(
   throttle(async (date) => {
     try {
+      console.log("username is being loaded" + username);
+      // if username does not exist, don't fetch entry, just return nothing
+      if (!username) { return;}
       setEntryData("");
       // TO DO: fix the link, currently the query parameter after /entries requests specifically for user123's entry for a specific day
-      const response = await fetch(`https://1cmhezd4r6.execute-api.us-east-1.amazonaws.com/dev/entries?entryDate=${date.toISOString().split("T")[0]}&userId=jasmingg`);
+      const response = await fetch(`https://1cmhezd4r6.execute-api.us-east-1.amazonaws.com/dev/entries?entryDate=${date.toISOString().split("T")[0]}&userId=${username}`);
       const data = await response.json();
       setEntryData(data);
     } catch (err) {
@@ -48,14 +62,15 @@ const MyJournal = () => {
       setEntryData(null); // fallback to blank if nothing returned
     }
   }, 2000, { trailing: true }),
-  [] // <- stable instance
+  [username] // re-creates the throttled function when username changes
 );
 
   // if viewingDate changes: call fetchEntry to create a GET request to get entry data for current day
   useEffect(() => {
-  if (viewingDate) {
+  if (viewingDate && idToken && username) {
     throttledFetchEntry(viewingDate);
   }
+    // changes on load
 }, [viewingDate, throttledFetchEntry]);
 
 
@@ -70,20 +85,20 @@ const MyJournal = () => {
     currentEntry: { mood: mood, entry: entry },
     savedEntry: { mood: entryData?.mood, entry: entryData?.entry } })
 
-    if ( isDuplicate ) {
-      console.log("isDuplicate is true")
+    if ( isDuplicate && username !== undefined) {
       ToastBannerRef.current.showToast("No changes to save.", "warning" );
       return;
     }
     else {
       console.log("running submit")
       try {
+        if (username) {
         console.log("Submitting entry:", { mood, entry });
         const response = await fetch(saveEntryRoute, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userId: "jasmingg",                    // replace with actual user ID later
+            userId: username,                    // replace with actual user ID later
             entryDate: new Date().toISOString().split("T")[0],
             mood: mood,
             entry: entry,
@@ -93,6 +108,10 @@ const MyJournal = () => {
         console.log("Entry Saved:" , data.message);
         // using exposed method via ref to save entry
         ToastBannerRef.current.showToast("Entry Saved!", "success");
+      }
+      else {
+        ToastBannerRef.current.showToast("Error log in to submit", "error");
+      }
       }
       catch (err) {
         console.error("Failed to submit entry");
@@ -110,7 +129,8 @@ const MyJournal = () => {
         <header className="journal-header">
             <DateSelector
               viewingDate={viewingDate} 
-              changeDate={changeDate}/>
+              changeDate={changeDate}
+              loggedInAccess={accessToken ? true : false}/>
             <p>Reflect on your day, track your thoughts.</p>
         </header>
           <form onSubmit={handleSubmit}>

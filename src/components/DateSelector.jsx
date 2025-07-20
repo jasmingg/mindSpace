@@ -2,7 +2,7 @@ import { useState } from "react";
 import "../styles/DateSelector.css";
 
 
-export default function DateSelector({viewingDate, changeDate, fetchEntry}) {
+export default function DateSelector({viewingDate, changeDate, loggedInAccess}) {
 
   // returns the date for the heading. (eg. Wednesday June 11th.)
   function getFormattedDate(date) {
@@ -39,13 +39,13 @@ export default function DateSelector({viewingDate, changeDate, fetchEntry}) {
 
   return (
     <div className="arrow-date-container">
-      <img id="leftArrow" src="../src/assets/arrow-fat-line-left-fill.svg" className="arrow-button" 
-        onClick={moveBackOne}/>
+      <img id="leftArrow" src="../src/assets/arrow-fat-line-left-fill.svg" className= {loggedInAccess ? "arrow-button" : "arrow-no-access"}
+        onClick={loggedInAccess ? moveBackOne : null}/>
       
       <h1>{getFormattedDate(viewingDate)}</h1>
       
-      <img id ="rightArrow" src="../src/assets/arrow-fat-line-right-fill.svg" className="arrow-button" 
-        onClick={moveForwardOne}/>
+      <img id ="rightArrow" src="../src/assets/arrow-fat-line-right-fill.svg" className= {loggedInAccess ? "arrow-button" : "arrow-no-access"}
+        onClick={loggedInAccess ? moveForwardOne : null}/>
     </div>
   )
 }
