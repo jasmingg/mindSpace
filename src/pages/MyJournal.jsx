@@ -81,7 +81,7 @@ const MyJournal = () => {
     e.preventDefault();
     // Get the latest entry data from EntryDisplay.
     const { entry, mood } = entryDisplayRef.current.getEntryData();
-    const isDuplicate = ToastBannerRef.current.checkAndToastDuplicate({
+    const isDuplicate = ToastBannerRef.current.checkToastDuplicate({
     currentEntry: { mood: mood, entry: entry },
     savedEntry: { mood: entryData?.mood, entry: entryData?.entry } })
 
@@ -110,7 +110,8 @@ const MyJournal = () => {
         ToastBannerRef.current.showToast("Entry Saved!", "success");
       }
       else {
-        ToastBannerRef.current.showToast("Error log in to submit", "error");
+        console.log("Error toast is being called")
+        ToastBannerRef.current.showToast("Please sign in to save and view your entries", "error", -1); // 0 = indefinite time the toast stays up
       }
       }
       catch (err) {
@@ -130,6 +131,7 @@ const MyJournal = () => {
             <DateSelector
               viewingDate={viewingDate} 
               changeDate={changeDate}
+              // changes to true or false every time accessToken is changed
               loggedInAccess={accessToken ? true : false}/>
             <p>Reflect on your day, track your thoughts.</p>
         </header>

@@ -13,14 +13,17 @@ const ToastBanner = forwardRef((_, ref) => {
     
   useImperativeHandle(ref, () => ({
     // allows MyJournal to call showToast to display a specific toast for 3 seconds
-    showToast(message, type) {
+    showToast(message, type, timeMs='3000') {
       setToast({ visible: true, message, type });
-      setTimeout(() => {
-        setToast(prev => ({ ...prev, visible: false }));
-      }, 3000);
+                                    // less than 0 allows for negative number as timeMs meaning no restriction
+      if (typeof timeMs === "number" && timeMs > 0) {
+        setTimeout(() => {
+          setToast(prev => ({ ...prev, visible: false }));
+        }, timeMs);
+      }
     } ,
     // checks if entries are duplicates before saving, returns true/false
-    checkAndToastDuplicate({ currentEntry, savedEntry }) {
+    checkToastDuplicate({ currentEntry, savedEntry }) {
         const currentText = (currentEntry.entry || "").trim()
         const currentMood = (currentEntry.mood || "").trim()
         const savedText = (savedEntry?.entry || "").trim();
@@ -34,13 +37,18 @@ const ToastBanner = forwardRef((_, ref) => {
   }
 ));
 
+const handleCloseToast = () => {
+  setToast(prev => ({ ...prev, visible: false })); // only removing visibility (closing banner)
+};
+
   return (
     <>
       {/* if entry is successfully saved, user needs to log in before saving, or entry is a duplicate, this shows up*/}
       {toast.visible && (
         <div className={`toast ${toast.type}`}>
           <span>{toast.message}</span>
-          <div className="toast-timer" />
+           <button className="toast-close" onClick={handleCloseToast}>×</button>
+          <div className={toast.type === "success" || toast.type === "warning" ? "toast-timer" : null} />
         </div>
       )}
     </>

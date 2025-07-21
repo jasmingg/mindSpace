@@ -6,7 +6,11 @@ export default function AccountMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
   const auth = useAuth();
 
-  // Handles redirecting user to homepage after logging out and clearing user info from local session
+    // logged in: show "Hi, nickname" and dropdown menu
+  const nickname = auth.user?.profile.nickname;
+
+
+  // handles redirecting user to homepage after logging out and clearing user info from local session
   const signOutRedirect = () => {
     auth.removeUser();
     const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
@@ -15,25 +19,27 @@ export default function AccountMenu() {
     window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
   };
 
-  if (!auth.isAuthenticated) {
-    // Not logged in: show login button
-    return (
-      <button className="profile-button" onClick={() => auth.signinRedirect()}>
-        <img
-          src="src/assets/anonymous-profile.png"
-          alt="User profile"
-          className="profile-picture"
-        />
-        <span className="profile-text">Log in</span>
-      </button>
-    );
-  }
+  // returns the log in button functionality
+  function logInButton () {
+    if (!auth.isAuthenticated ) {
+      // not logged in: show login button
+      return (
+        <button className="profile-button" onClick={() => auth.signinRedirect()}>
+          <img
+            src="src/assets/anonymous-profile.png"
+            alt="User profile"
+            className="profile-picture"
+          />
+          <span className="profile-text">Log in</span>
+        </button>
+      );
+    }
+}
 
-  // Logged in: show "Hi, nickname" and dropdown menu
-  const nickname = auth.user?.profile.nickname;
-
+// returns a drop-down for following actions: log out and account services
+function logOutUI () {
   return (
-    <div className="user-menu-container" 
+        <div className="user-menu-container" 
     onMouseEnter={() => setMenuOpen(true)}
     onMouseLeave={() => setMenuOpen(false)}
     >
@@ -57,5 +63,11 @@ export default function AccountMenu() {
         </div>
       )}
     </div>
+  )
+}
+  return (
+    <>
+    {auth.isLoading ? null : (auth.isAuthenticated ? logOutUI() : logInButton())}
+    </>
   );
 }
