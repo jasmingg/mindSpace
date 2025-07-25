@@ -49,7 +49,7 @@ const EntryDisplay = forwardRef(({ entryData, isSameDate, viewingDate }, ref) =>
             >
               <option value="">-- Select your mood --</option>
               <option value="happy" id="happy">😊 Happy</option>
-              <option valu="okay"id="okay">😐 Okay</option>
+              <option value="okay"id="okay">😐 Okay</option>
               <option value="sad" id="sad">😞 Sad</option>
               <option value="frustrated" id="frustrated">😤 Frustrated</option>
               <option value="calm" id="calm">😌 Calm</option>

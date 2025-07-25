@@ -65,12 +65,18 @@
 
 .stat-box {
   background-color: #f3f4f6;
-  font: Inter;
+  font-family: "Inter", sans-serif;
   padding: 1rem 2rem;
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem; /* adds space between emoji/number and label */
+  height: 90px; /* you can tweak this for consistency */
 }
 
 .stat-box:hover {
