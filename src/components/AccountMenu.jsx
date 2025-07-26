@@ -21,6 +21,7 @@ export default function AccountMenu() {
 
   // returns the log in button functionality
   function logInButton () {
+    console.log("User is not logged in");
     if (!auth.isAuthenticated ) {
       // not logged in: show login button
       return (
@@ -38,6 +39,7 @@ export default function AccountMenu() {
 
 // returns a drop-down for following actions: log out and account services
 function logOutUI () {
+  console.log("User is logged in:", nickname);
   return (
         <div className="user-menu-container" 
     onMouseEnter={() => setMenuOpen(true)}

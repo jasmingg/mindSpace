@@ -25,8 +25,6 @@ const MyJournal = () => {
     // insert base URL from AWS API Gateway Invoke URL
   const baseAPIRoute = import.meta.env.VITE_JOURNAL_BASE_ROUTE;
 
-  const  oldAPIRoute = import.meta.env.VITE_JOURNAL_GET_ENTRY_DATA_BASE_ROUTE
-
     // holds the value for the date title to display on page
   const [viewingDate, changeDate] = useState(new Date()); // today's date = new Date()
     // holds the entry content to display on page
@@ -59,16 +57,16 @@ const MyJournal = () => {
   throttle(async (date) => {
     try {
       // if username does not exist, don't fetch entry, just return nothing
-      if (!username) { return;}
+      if (!username && auth.isAuthenticated) { return;}
       setEntryData("");
-      const response = await fetch(`${oldAPIRoute}?entryDate=${date.toISOString().split("T")[0]}&userId=${username}`);
+      const response = await fetch(`${baseAPIRoute}/entries?entryDate=${date.toISOString().split("T")[0]}&userId=${username}`);
       const data = await response.json();
       setEntryData(data);
     } 
     catch (err) {
       console.error("Failed to fetch entry:", {
       error: err,
-      url: `${oldAPIRoute}?date=${date.toISOString().split("T")[0]}&userId=${username}`,
+      url: `${baseAPIRoute}/entries?date=${date.toISOString().split("T")[0]}&userId=${username}`,
       status: response?.status,
       statusText: response?.statusText
     });
@@ -78,9 +76,9 @@ const MyJournal = () => {
   [username] // re-creates the throttled function when username changes
 );
 
-  // if viewingDate changes: call fetchEntry to create a GET request to get entry data for current day
+  // if viewingDate changes: call fetchEntry to create a get request to get entry data for current day
   useEffect(() => {
-  if (viewingDate && idToken && username) {
+  if (viewingDate && auth.isAuthenticated && username) {
     throttledFetchEntry(viewingDate);
   }
     // changes on load
@@ -127,6 +125,8 @@ const MyJournal = () => {
   }
   }
 
+  // async function: retrieves stats (GET) from the API gateway + lambda
+    // stats include: total entries and streak data
       async function fetchStats() {
         try {
           const res = await fetch(`${baseAPIRoute}/stats?userId=${username}`);
@@ -156,12 +156,16 @@ const MyJournal = () => {
           });
         } finally {
           setLoadingStats(false);
+        }
       }
-  }
 
   // if username changes and is not null, fetch stats
   useEffect(() => {
-    if (username) fetchStats();
+    if (username && auth.isAuthenticated) { 
+      console.log("Username changed:", username);
+      fetchStats();
+      console.log("fetched stats");
+    }
   }, [username]);
 
 
@@ -174,7 +178,7 @@ const MyJournal = () => {
               viewingDate={viewingDate} 
               changeDate={changeDate}
               // changes to true or false every time a successful login or logout happens
-              loggedInAccess={useAuth().isAuthenticated ? true : false}/>
+              loggedInAccess={auth.isAuthenticated ? true : false}/>
             <p>Reflect on your day, track your thoughts.</p>
         </header>
           <form onSubmit={handleSubmit}>
@@ -192,7 +196,7 @@ const MyJournal = () => {
                   title="Displays users streaks based on continuous daily entries">
                     🔥
                 </div>
-                {username ? 
+                {username && auth.isAuthenticated? 
                   loadingStats ? 
                     <p>Loading...</p>
                       : <StreakCounter
