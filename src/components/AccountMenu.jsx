@@ -1,33 +1,24 @@
 import { useState } from "react";
 import "../styles/AccountMenu.css";
 import { useAuth } from 'react-oidc-context';
+import { useAuthState } from '../contexts/AuthContext';
+import anonProfilePic from '../assets/anonymous-profile.png';
+import { signOutRedirect } from '../utils/signOutRedirect';
 
 export default function AccountMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
   const auth = useAuth();
-
-    // logged in: show "Hi, nickname" and dropdown menu
-  const nickname = auth.user?.profile.nickname;
-
-
-  // handles redirecting user to homepage after logging out and clearing user info from local session
-  const signOutRedirect = () => {
-    auth.removeUser();
-    const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
-    const logoutUri = "http://localhost:5173/";  // my local host port #, when running check your port #
-    const cognitoDomain = import.meta.env.VITE_COGNITO_DOMAIN;
-    window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
-  };
+  const { isReady, isAuthenticated, username, nickname } = useAuthState();
 
   // returns the log in button functionality
   function logInButton () {
     console.log("User is not logged in");
-    if (!auth.isAuthenticated ) {
+    if ( !isAuthenticated ) {
       // not logged in: show login button
       return (
         <button className="profile-button" onClick={() => auth.signinRedirect()}>
           <img
-            src="src/assets/anonymous-profile.png"
+            src={anonProfilePic}
             alt="User profile"
             className="profile-picture"
           />
@@ -39,7 +30,7 @@ export default function AccountMenu() {
 
 // returns a drop-down for following actions: log out and account services
 function logOutUI () {
-  console.log("User is logged in:", nickname);
+  console.log("User is logged in as:", nickname || username);
   return (
         <div className="user-menu-container" 
     onMouseEnter={() => setMenuOpen(true)}
@@ -51,7 +42,7 @@ function logOutUI () {
           alt="User profile"
           className="profile-picture"
         />
-        <span className="profile-text">Hi, {nickname}</span>
+        <span className="profile-text">Hi, {nickname || username || "Welcome!"}</span>
       </button>
 
       {menuOpen && (
@@ -59,7 +50,7 @@ function logOutUI () {
           <button className="dropdown-item" onClick={() => alert("Go to Account Services")}>
             My Account
           </button>
-          <button className="dropdown-item" onClick={signOutRedirect}>
+          <button className="dropdown-item" onClick={() => signOutRedirect(auth)}>
             Log Out
           </button>
         </div>
@@ -69,7 +60,8 @@ function logOutUI () {
 }
   return (
     <>
-    {auth.isLoading ? null : (auth.isAuthenticated ? logOutUI() : logInButton())}
+    {/* if auth state is ready, show either log in button or user menu */}
+    {isReady ?  (isAuthenticated ? logOutUI() : logInButton()) : null}
     </>
   );
 }

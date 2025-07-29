@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuthState } from '../contexts/AuthContext';
 import throttle from "lodash.throttle";
 import "../styles/MyJournal.css";
-
-// self-made hook for gaining access to tokens
-import useTokens from "../components/hooks/useTokens"
 
 // holds content for navigation:Home, Entries, etc
 import MenuBar from "../components/MenuBar"
@@ -40,12 +37,7 @@ const MyJournal = () => {
    // used in <ToastBanner />: gives access to exposed function showToast
   const ToastBannerRef = useRef();
 
-  // getting tokens from hook. Can hold null or the tokens
-  const {accessToken, idToken} = useTokens();
-
-  const auth = useAuth();
-  // can be null or hold the username, auth is stateful
-  const username = auth.user?.profile?.["cognito:username"];
+  const { isReady, isAuthenticated, username } = useAuthState();
 
   // compares 2 different dates and returns a boolean (used in child components)
   function isSameDate(date1, date2) {
@@ -57,7 +49,7 @@ const MyJournal = () => {
   throttle(async (date) => {
     try {
       // if username does not exist, don't fetch entry, just return nothing
-      if (!username && auth.isAuthenticated) { return;}
+      if (!username && isAuthenticated) { return;}
       setEntryData("");
       const response = await fetch(`${baseAPIRoute}/entries?entryDate=${date.toISOString().split("T")[0]}&userId=${username}`);
       const data = await response.json();
@@ -78,7 +70,7 @@ const MyJournal = () => {
 
   // if viewingDate changes: call fetchEntry to create a get request to get entry data for current day
   useEffect(() => {
-  if (viewingDate && auth.isAuthenticated && username) {
+  if (viewingDate && isAuthenticated && username) {
     throttledFetchEntry(viewingDate);
   }
     // changes on load
@@ -89,18 +81,17 @@ const MyJournal = () => {
     e.preventDefault();
     // Get the latest entry data from EntryDisplay.
     const { entry, mood } = entryDisplayRef.current?.getEntryData();
-    console.log("Submitting entry:", { mood, entry });
     const isDuplicate = ToastBannerRef.current.checkToastDuplicate({
     currentEntry: { mood: mood, entry: entry },
     savedEntry: { mood: entryData?.mood, entry: entryData?.entry } })
 
-    if ( isDuplicate && username !== undefined) {
+    if ( isDuplicate && isAuthenticated) {
       ToastBannerRef.current.showToast("No changes to save.", "warning" );
       return;
     }
     else {
       try {
-        if (username) {
+        if (username && isAuthenticated) {
         console.log("Submitting entry:", { mood, entry });
         const response = await fetch(`${baseAPIRoute}/entries`, {
           method: "POST",
@@ -112,6 +103,8 @@ const MyJournal = () => {
             entry: entry,
           }),
         });
+        // setting the usable data to the current entry data
+         setEntryData({ mood, entry });
         // using exposed method via ref to save entry
         ToastBannerRef.current.showToast("Entry Saved!", "success");
       }
@@ -161,12 +154,12 @@ const MyJournal = () => {
 
   // if username changes and is not null, fetch stats
   useEffect(() => {
-    if (username && auth.isAuthenticated) { 
+    if (username && isAuthenticated) { 
       console.log("Username changed:", username);
       fetchStats();
       console.log("fetched stats");
     }
-  }, [username]);
+  }, [isAuthenticated, username]);
 
 
   return (
@@ -178,7 +171,7 @@ const MyJournal = () => {
               viewingDate={viewingDate} 
               changeDate={changeDate}
               // changes to true or false every time a successful login or logout happens
-              loggedInAccess={auth.isAuthenticated ? true : false}/>
+              loggedInAccess={isAuthenticated ? true : false}/>
             <p>Reflect on your day, track your thoughts.</p>
         </header>
           <form onSubmit={handleSubmit}>
@@ -196,7 +189,7 @@ const MyJournal = () => {
                   title="Displays users streaks based on continuous daily entries">
                     🔥
                 </div>
-                {username && auth.isAuthenticated? 
+                {username && isAuthenticated? 
                   loadingStats ? 
                     <p>Loading...</p>
                       : <StreakCounter
