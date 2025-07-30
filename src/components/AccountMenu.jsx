@@ -1,9 +1,11 @@
 import { useState } from "react";
-import "../styles/AccountMenu.css";
 import { useAuth } from 'react-oidc-context';
 import { useAuthState } from '../contexts/AuthContext';
-import anonProfilePic from '../assets/anonymous-profile.png';
 import { signOutRedirect } from '../utils/signOutRedirect';
+import log from "../utils/logger";
+
+import anonProfilePic from '../assets/anonymous-profile.png';
+import "../styles/AccountMenu.css";
 
 export default function AccountMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,7 +14,7 @@ export default function AccountMenu() {
 
   // returns the log in button functionality
   function logInButton () {
-    console.log("User is not logged in");
+    log.info("User is not logged in");    //uncomment for debugging
     if ( !isAuthenticated ) {
       // not logged in: show login button
       return (
@@ -28,9 +30,8 @@ export default function AccountMenu() {
     }
 }
 
-// returns a drop-down for following actions: log out and account services
+// user is logged in: returns a drop-down for following actions: log out and account services
 function logOutUI () {
-  console.log("User is logged in as:", nickname || username);
   return (
         <div className="user-menu-container" 
     onMouseEnter={() => setMenuOpen(true)}
@@ -47,7 +48,7 @@ function logOutUI () {
 
       {menuOpen && (
         <div className="dropdown-menu">
-          <button className="dropdown-item" onClick={() => alert("Go to Account Services")}>
+          <button className="dropdown-item"> {/* TODO: work on functionality for this button */}
             My Account
           </button>
           <button className="dropdown-item" onClick={() => signOutRedirect(auth)}>
