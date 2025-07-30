@@ -11,7 +11,7 @@ import { AuthProvider as StateProvider } from "./contexts/AuthContext";
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_DzAZ9bugf",
   client_id: "4m10oprgt87khi0r60udgj69o0",
-  redirect_uri: "http://localhost:5173/",
+  redirect_uri: import.meta.env.VITE_FRONTEND_URL,
   response_type: "code",
   scope: "phone openid email profile"
 };
