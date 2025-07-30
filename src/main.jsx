@@ -2,7 +2,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { AuthProvider } from "react-oidc-context";
+
+// oidc provider handles the actual Cognito login flow using your config
+import { AuthProvider as OidcProvider } from "react-oidc-context";
+// state provider centralizes auth state (isReady, isAuthenticated, username, tokens)
+import { AuthProvider as StateProvider } from "./contexts/AuthContext";
 
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_DzAZ9bugf",
@@ -18,8 +22,20 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   // strictMode is a safety check: when page loads, API requests are sent twice to check for unsafe side effects
   <React.StrictMode>
-    <AuthProvider {...cognitoAuthConfig}>
-      <App />
-    </AuthProvider>
+    {/* first the OIDC provider with your Cognito config */}
+{/*
+      OidcProvider wraps the app and manages the Cognito login flow,
+      using the provided cognitoAuthConfig for authority, client_id, etc.
+    */}
+    <OidcProvider {...cognitoAuthConfig}>
+      {/*
+        StateProvider sits inside the OidcProvider,
+        reads useAuth() state once oidc is initialized,
+        and exposes a clean, centralized auth state to the rest of the app
+      */}
+      <StateProvider>
+        <App />
+      </StateProvider>
+    </OidcProvider>
   </React.StrictMode>
 );

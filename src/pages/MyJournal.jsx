@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useAuth } from "react-oidc-context";
+import { useAuthState } from '../contexts/AuthContext';
 import throttle from "lodash.throttle";
+import log from "../utils/logger";
 import "../styles/MyJournal.css";
-
-// self-made hook for gaining access to tokens
-import useTokens from "../components/hooks/useTokens"
 
 // holds content for navigation:Home, Entries, etc
 import MenuBar from "../components/MenuBar"
@@ -40,45 +38,49 @@ const MyJournal = () => {
    // used in <ToastBanner />: gives access to exposed function showToast
   const ToastBannerRef = useRef();
 
-  // getting tokens from hook. Can hold null or the tokens
-  const {accessToken, idToken} = useTokens();
-
-  const auth = useAuth();
-  // can be null or hold the username, auth is stateful
-  const username = auth.user?.profile?.["cognito:username"];
+  const { isReady, isAuthenticated, username } = useAuthState();
 
   // compares 2 different dates and returns a boolean (used in child components)
   function isSameDate(date1, date2) {
     return date1.toDateString() === date2.toDateString();
   }
 
-    // NOTE: sends GET request to dynamoDB using API gateway to lambda. Limited to one request per 2 seconds.
+    // NOTE: sends GET request to dynamoDB using API gateway + lambda. 
+            // limited to one request per 2 seconds.
   const throttledFetchEntry = useCallback(
   throttle(async (date) => {
+    // if username does not exist, don't fetch entry, just return nothing
+    if (!isAuthenticated || !username) {
+      log.warn("Auth not ready or username not set. Skipping fetch.");
+      return;
+    }
     try {
-      // if username does not exist, don't fetch entry, just return nothing
-      if (!username && auth.isAuthenticated) { return;}
       setEntryData("");
       const response = await fetch(`${baseAPIRoute}/entries?entryDate=${date.toISOString().split("T")[0]}&userId=${username}`);
       const data = await response.json();
       setEntryData(data);
+      log.debug("Fetched entry data:", {
+        date: date.toISOString().split("T")[0],
+        userId: username,
+        entry: data
+      });
     } 
     catch (err) {
-      console.error("Failed to fetch entry:", {
-      error: err,
-      url: `${baseAPIRoute}/entries?date=${date.toISOString().split("T")[0]}&userId=${username}`,
-      status: response?.status,
-      statusText: response?.statusText
-    });
+      log.error("Failed to fetch entry:", {
+        error: err.message,
+        url: `${baseAPIRoute}/entries?date=${date.toISOString().split("T")[0]}&userId=${username}`,
+        username,
+        date: date.toISOString().split("T")[0]
+      });
   setEntryData(null);
 }
   }, 2000, { trailing: true }),
-  [username] // re-creates the throttled function when username changes
+  [username, isAuthenticated] // re-creates the throttled function when username changes
 );
 
   // if viewingDate changes: call fetchEntry to create a get request to get entry data for current day
   useEffect(() => {
-  if (viewingDate && auth.isAuthenticated && username) {
+  if (viewingDate && isAuthenticated && username) {
     throttledFetchEntry(viewingDate);
   }
     // changes on load
@@ -89,38 +91,45 @@ const MyJournal = () => {
     e.preventDefault();
     // Get the latest entry data from EntryDisplay.
     const { entry, mood } = entryDisplayRef.current?.getEntryData();
-    console.log("Submitting entry:", { mood, entry });
     const isDuplicate = ToastBannerRef.current.checkToastDuplicate({
-    currentEntry: { mood: mood, entry: entry },
-    savedEntry: { mood: entryData?.mood, entry: entryData?.entry } })
+      currentEntry: { mood: mood, entry: entry },
+      savedEntry: { mood: entryData?.mood, entry: entryData?.entry } 
+    })
 
-    if ( isDuplicate && username !== undefined) {
+    if ( isDuplicate && isAuthenticated) {
       ToastBannerRef.current.showToast("No changes to save.", "warning" );
       return;
     }
     else {
       try {
-        if (username) {
-        console.log("Submitting entry:", { mood, entry });
-        const response = await fetch(`${baseAPIRoute}/entries`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: username,
-            entryDate: viewingDate.toISOString().split('T')[0], // viewingDate should be today
-            mood: mood,
-            entry: entry,
-          }),
-        });
-        // using exposed method via ref to save entry
-        ToastBannerRef.current.showToast("Entry Saved!", "success");
-      }
-      else {
-        ToastBannerRef.current.showToast("Please sign in to save and view your entries", "error", -1); // 0 = indefinite time the toast stays up
-      }
+        if (username && isAuthenticated) {
+          log.info("Submitting entry...", { mood, entry });
+          const response = await fetch(`${baseAPIRoute}/entries`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: username,
+              entryDate: viewingDate.toISOString().split('T')[0], // viewingDate should be today
+              mood: mood,
+              entry: entry,
+            }),
+          });
+          // check if the response is OK (status code 200-299)
+          if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+          }
+          // setting the usable data to the current entry data
+          setEntryData({ mood, entry });
+          // using exposed method via ref to save entry
+          ToastBannerRef.current.showToast("Entry Saved!", "success");
+        }
+        else {
+          ToastBannerRef.current.showToast("Please sign in to save and view your entries", "error", -1); // 0 = indefinite time the toast stays up
+        }
       }
       catch (err) {
         ToastBannerRef.current.showToast("Failed to save entry. Please try again.", "error");
+        log.error("Failed to save entry:", err);
       }
   }
   }
@@ -134,10 +143,19 @@ const MyJournal = () => {
           const contentType = res.headers.get('content-type');
           if (contentType && contentType.includes('text/html')) {
             const html = await res.text();
+            log.error("Received HTML instead of JSON", {
+              status: res.status,
+              preview: html.substring(0, 100),
+              url: `${baseAPIRoute}/stats?userId=${username}`,
+            });
             throw new Error(`Server returned HTML instead of JSON. Status: ${res.status}. Response: ${html.substring(0, 100)}...`);
           }
           
           if (!res.ok) {
+             log.error("Fetch failed with non-OK status", {
+              status: res.status,
+              url: `${baseAPIRoute}/stats?userId=${username}`,
+            });
             throw new Error(`HTTP error! Status: ${res.status}`);
           }
           
@@ -149,11 +167,11 @@ const MyJournal = () => {
           });
 
         } catch (err) {
-          console.error("Detailed stats fetch error:", {
-            error: err.message,
-            url: `${baseAPIRoute}?userId=${username}`,
-            stack: err.stack
-          });
+            log.error("Error occurred while fetching stats", {
+              message: err.message,
+              stack: err.stack,
+              url: `${baseAPIRoute}/stats?userId=${username}`,
+            });
         } finally {
           setLoadingStats(false);
         }
@@ -161,13 +179,13 @@ const MyJournal = () => {
 
   // if username changes and is not null, fetch stats
   useEffect(() => {
-    if (username && auth.isAuthenticated) { 
-      console.log("Username changed:", username);
-      fetchStats();
-      console.log("fetched stats");
+    if (username && isAuthenticated) { 
+      log.info("Fetching stats for user:", username);
+      fetchStats()
+      .then( () => log.debug("Stats fetched successfully", { username }) ) // after fetch is resolved, we log the result
+      .catch( err => log.error("Stats fetch failed", { error: err.message }) );
     }
-  }, [username]);
-
+  }, [isAuthenticated, username]);
 
   return (
     <div className="journal-page">
@@ -178,7 +196,7 @@ const MyJournal = () => {
               viewingDate={viewingDate} 
               changeDate={changeDate}
               // changes to true or false every time a successful login or logout happens
-              loggedInAccess={auth.isAuthenticated ? true : false}/>
+              loggedInAccess={isAuthenticated ? true : false}/>
             <p>Reflect on your day, track your thoughts.</p>
         </header>
           <form onSubmit={handleSubmit}>
@@ -196,7 +214,7 @@ const MyJournal = () => {
                   title="Displays users streaks based on continuous daily entries">
                     🔥
                 </div>
-                {username && auth.isAuthenticated? 
+                {username && isAuthenticated? 
                   loadingStats ? 
                     <p>Loading...</p>
                       : <StreakCounter
@@ -218,5 +236,4 @@ const MyJournal = () => {
     </div>
   );
 }
-
 export default MyJournal;
