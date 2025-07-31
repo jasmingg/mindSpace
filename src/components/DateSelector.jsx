@@ -39,12 +39,12 @@ export default function DateSelector({viewingDate, changeDate, loggedInAccess}) 
 
   return (
     <div className="arrow-date-container">
-      <img id="leftArrow" src="../src/assets/arrow-fat-line-left-fill.svg" className= {loggedInAccess ? "arrow-button" : "arrow-no-access"}
+      <img id="leftArrow" src="/arrow-fat-line-left-fill.svg" className= {loggedInAccess ? "arrow-button" : "arrow-no-access"}
         onClick={loggedInAccess ? moveBackOne : null}/>
       
       <h1>{getFormattedDate(viewingDate)}</h1>
       
-      <img id ="rightArrow" src="../src/assets/arrow-fat-line-right-fill.svg" className= {loggedInAccess ? "arrow-button" : "arrow-no-access"}
+      <img id ="rightArrow" src="/arrow-fat-line-right-fill.svg" className= {loggedInAccess ? "arrow-button" : "arrow-no-access"}
         onClick={loggedInAccess ? moveForwardOne : null}/>
     </div>
   )
