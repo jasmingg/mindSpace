@@ -4,7 +4,7 @@ import { useAuthState } from '../contexts/AuthContext';
 import { signOutRedirect } from '../utils/signOutRedirect';
 import log from "../utils/logger";
 
-import anonProfilePic from '../assets/anonymous-profile.png';
+import anonProfilePic from '/anonymous-profile.png';
 import "../styles/AccountMenu.css";
 
 export default function AccountMenu() {
@@ -39,7 +39,7 @@ function logOutUI () {
     >
       <button className="profile-button">
         <img
-          src="src/assets/anonymous-profile.png"
+          src="/anonymous-profile.png"
           alt="User profile"
           className="profile-picture"
         />
