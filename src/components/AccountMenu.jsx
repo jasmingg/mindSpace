@@ -14,7 +14,7 @@ export default function AccountMenu() {
 
   // returns the log in button functionality
   function logInButton () {
-    log.info("User is not logged in");    //uncomment for debugging
+    log.info("User is not logged in");
     if ( !isAuthenticated ) {
       // not logged in: show login button
       return (
