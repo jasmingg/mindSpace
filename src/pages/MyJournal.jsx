@@ -44,6 +44,14 @@ const MyJournal = () => {
   function isSameDate(date1, date2) {
     return date1.toDateString() === date2.toDateString();
   }
+  
+  // pad: ensures single-digit numbers have a leading zero (e.g., 7 -> "07")
+  // toLocalDateString: converts a Date object to a local YYYY-MM-DD string
+  //   - uses local time components to avoid timezone issues from toISOString()
+  //   - formats month and day with leading zeros for consistent 2-digit output
+  const pad = (n) => n.toString().padStart(2, '0');
+  const toLocalDateString = (date) => `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+
 
     // NOTE: sends GET request to dynamoDB using API gateway + lambda. 
             // limited to one request per 2 seconds.
@@ -56,11 +64,11 @@ const MyJournal = () => {
     }
     try {
       setEntryData("");
-      const response = await fetch(`${baseAPIRoute}/entries?entryDate=${date.toISOString().split("T")[0]}&userId=${username}`);
+      const response = await fetch(`${baseAPIRoute}/entries?entryDate=${toLocalDateString(date).split("T")[0]}&userId=${username}`);
       const data = await response.json();
       setEntryData(data);
       log.debug("Fetched entry data:", {
-        date: date.toISOString().split("T")[0],
+        date: toLocalDateString(date),
         userId: username,
         entry: data
       });
@@ -109,7 +117,7 @@ const MyJournal = () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               userId: username,
-              entryDate: viewingDate.toISOString().split('T')[0], // viewingDate should be today
+              entryDate: toLocalDateString(viewingDate), // viewingDate should be today
               mood: mood,
               entry: entry,
             }),
@@ -118,10 +126,27 @@ const MyJournal = () => {
           if (!response.ok) {
             throw new Error(`Server responded with status ${response.status}`);
           }
-          // setting the usable data to the current entry data
-          setEntryData({ mood, entry });
-          // using exposed method via ref to save entry
-          ToastBannerRef.current.showToast("Entry Saved!", "success");
+          // if the response is OK, parse the JSON from the response
+          const responseData = await response.json();
+          // start getting info about rate limits
+          const attemptsLeft = responseData.attemptsLeft;
+          const resetTime = new Date(responseData.resetTime); // ISO string -> Date object
+
+          // Format reset time (e.g., "3:38 PM")
+          const formattedResetTime = resetTime.toLocaleTimeString([], {
+            hour: 'numeric',
+            minute: '2-digit',
+          });
+          
+          if (attemptsLeft > 0) {
+            // setting the usable data to the current entry data
+            setEntryData({ mood, entry });
+            fetchStats({force: false, isAfterSave: true}); // re-fetch stats, not forced but after saving a NEW entry
+            // using exposed method via ref to save entry
+            ToastBannerRef.current.showToast(`Entry Saved! ${attemptsLeft} saves allowed until ${formattedResetTime}`, "success");
+          } else {
+            ToastBannerRef.current.showToast(`No saves left. Try again after ${formattedResetTime}`, "error", -1);
+          }
         }
         else {
           ToastBannerRef.current.showToast("Please sign in to save and view your entries", "error", -1); // 0 = indefinite time the toast stays up
@@ -133,10 +158,28 @@ const MyJournal = () => {
       }
   }
   }
+  // useRef to store the last fetched stats day
+  // this is used to avoid unnecessary re-fetching of stats if the day hasn't changed
+  const lastFetchedStatsDay = useRef(null);
+  const isSameDay = (a, b) =>
+    new Date(a).toDateString() === new Date(b).toDateString();
 
   // async function: retrieves stats (GET) from the API gateway + lambda
-    // stats include: total entries and streak data
-      async function fetchStats() {
+  // stats include: total entries and streak data
+  // force: if true (on page load), always fetch stats even if already fetched today
+  // isAfterSave: if true, fetch stats after saving a new entry for the day
+  async function fetchStats(force = false, isAfterSave = false) {
+    const todayStr = new Date().toISOString().slice(0, 10); // yyyy-mm-dd format
+    // prevent unnecessary fetches 
+    // (only fetch if forced (on load) OR if the day has changed OR if after saving a NEW entry for the day):
+    // Skip fetching stats if:
+        // - we're not forcing a refresh
+        // - we already fetched stats today
+        // - and we didn't just save a new entry
+    if (!force && lastFetchedStatsDay.current && isSameDay(lastFetchedStatsDay.current, todayStr) && !isAfterSave) {
+      log.debug("Stats already fetched for today. Skipping fetch.");
+      return;
+    }
         try {
           const res = await fetch(`${baseAPIRoute}/stats?userId=${username}`);
         // First check if response is HTML
@@ -165,6 +208,7 @@ const MyJournal = () => {
             totalEntries: data.count || "undefined",
             streakData: data.dates || [] // streakData is always an array of the entry dates
           });
+          lastFetchedStatsDay.current = todayStr;
 
         } catch (err) {
             log.error("Error occurred while fetching stats", {
@@ -177,11 +221,11 @@ const MyJournal = () => {
         }
       }
 
-  // if username changes and is not null, fetch stats
+  // runs on load or login: if username is set and user is authenticated, fetch stats
   useEffect(() => {
     if (username && isAuthenticated) { 
       log.info("Fetching stats for user:", username);
-      fetchStats()
+      fetchStats({ force: true }) // force fetch on page load
       .then( () => log.debug("Stats fetched successfully", { username }) ) // after fetch is resolved, we log the result
       .catch( err => log.error("Stats fetch failed", { error: err.message }) );
     }
