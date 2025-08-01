@@ -1,7 +1,7 @@
 # 🧠 MindSpace
 
-🚧 This app is a passion project built for learning and portfolio purposes.
-
+🚧 Under Construction: URL To Be Released Soon...
+This app is a passion project built for learning and portfolio purposes.
 ---
 
 ## ✨ Current Features
